@@ -1,6 +1,6 @@
 {
   "name": "nodebb-plugin-private-forum-v2",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "Lock down the forum to registered users only. Redirects anonymous visitors to the login page. NodeBB v4 compatible (single-hook rewrite).",
   "main": "library.js",
   "files": [

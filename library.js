@@ -29,6 +29,34 @@ plugin.privateforum = function (data) {
     }
 
     const helpers = require.main.require('./src/controllers/helpers');
+
+    // This hook also fires inside nested routers. The REST API mounts one
+    // router per resource, so a request to /api/v3/groups/alice reaches us
+    // with `req.url` already stripped down to `/alice`.
+    //
+    // helpers.notAllowed() saves `req.url.replace(/^\/api/, '')` as
+    // `session.returnTo`, so a partial path makes the username look like a
+    // page the visitor asked for. Registration/login then ends with a redirect
+    // to `/alice` (a 404) instead of the forum. Such calls are therefore
+    // refused on the spot — same 401 as before, but without touching the
+    // session, so only real page destinations are ever remembered.
+    const originalUrl = req.originalUrl || '';
+    const isApiRequest = /^\/api(\/|$)/.test(originalUrl);
+    const partialApiPath = isApiRequest && !/^\/api(\/|$)/.test(url);
+    if (partialApiPath) {
+        return helpers.formatApiResponse(401, res);
+    }
+
+    // jQuery appends a cache buster (?_=1699… / &_=1699…) to XHR urls. That
+    // belongs to the request, not to the page we want to come back to, so drop
+    // it before core stores the destination.
+    const cleanUrl = url
+        .replace(/([?&])_=\d+(&|$)/, (match, separator, tail) => (tail === '&' ? separator : ''))
+        .replace(/[?&]$/, '');
+    if (cleanUrl) {
+        req.url = cleanUrl;
+    }
+
     helpers.notAllowed(req, res);
 };
 
