@@ -71,29 +71,66 @@ outside the allowlist are redirected; everything else (including all other
 
 ## Installation
 
-Via npm (once published) or the NodeBB ACP plugin page:
+The npm package name is **`nodebb-plugin-private-forum-v2`** (the upstream
+`nodebb-plugin-private-forum` name is taken on npm by the original author).
 
+```bash
+npm install nodebb-plugin-private-forum-v2
 ```
-npm install nodebb-plugin-private-forum
-```
+
+Then activate **Private Forum (v2)** in the NodeBB ACP (Plugins page).
+
+> **Plugin id note.** NodeBB derives a plugin's id from `package.json`'s `name`
+> (`pluginData.id = packageData.name` in `src/plugins/data.js`), and looks it up
+> at `node_modules/<id>`. The id of this plugin is therefore
+> **`nodebb-plugin-private-forum-v2`**, and the installed folder must carry the
+> same name. The `id` field in `plugin.json` is ignored by NodeBB.
 
 For a self-hosted / offline build, drop the plugin source into a directory
 bind-mounted into the container and reference it via the
 `NODEBB_ADDITIONAL_PLUGINS` environment variable (the approach used on the
-deployed instance). Example `docker-compose` snippet:
+deployed instance). **Keep the directory name identical to the package name**
+so the plugin id resolves correctly. Example `docker-compose` snippet:
 
 ```yaml
 services:
   nodebb:
     image: nodebb-custom:4.x
     environment:
-      NODEBB_ADDITIONAL_PLUGINS: /opt/custom-plugins/nodebb-plugin-private-forum
+      NODEBB_ADDITIONAL_PLUGINS: /opt/custom-plugins/nodebb-plugin-private-forum-v2
     volumes:
       - ./custom-plugins:/opt/custom-plugins:ro
 ```
 
 After changing `library.js`, restart the NodeBB container to rebuild with the
 plugin.
+
+## Publishing
+
+Publishing to npm is automated via GitHub Actions
+(`.github/workflows/npm-publish.yml`). A release is published whenever a GitHub
+**Release** is created whose tag matches `package.json`'s `version`.
+
+One-time setup — add a repository secret:
+
+1. Create an npm **Automation** (or Granular, with publish rights) token at
+   <https://www.npmjs.com/settings/~/tokens>.
+2. In the GitHub repo: **Settings → Secrets and variables → Actions → New
+   repository secret**, name it `NPM_TOKEN`, paste the token.
+
+Release flow:
+
+```bash
+# 1. bump the version and commit
+npm version patch          # or edit package.json manually
+git push
+
+# 2. create a GitHub Release with a matching tag, e.g. v2.0.4
+#    (the workflow then runs `npm publish`)
+```
+
+The workflow verifies the release tag equals `v<package.json version>` and
+aborts otherwise, so a mistyped tag never publishes a mismatched build.
 
 ## License
 

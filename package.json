@@ -1,11 +1,19 @@
 {
-  "name": "nodebb-plugin-private-forum",
+  "name": "nodebb-plugin-private-forum-v2",
   "version": "2.0.3",
   "description": "Lock down the forum to registered users only. Redirects anonymous visitors to the login page. NodeBB v4 compatible (single-hook rewrite).",
   "main": "library.js",
+  "files": [
+    "library.js",
+    "plugin.json"
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/qinmenghua/nodebb-plugin-private-forum"
+    "url": "git+https://github.com/qinmenghua/nodebb-plugin-private-forum.git"
+  },
+  "homepage": "https://github.com/qinmenghua/nodebb-plugin-private-forum",
+  "bugs": {
+    "url": "https://github.com/qinmenghua/nodebb-plugin-private-forum/issues"
   },
   "keywords": [
     "nodebb",
@@ -18,9 +26,16 @@
     "name": "Louis MILCENT",
     "email": "14235706+LM1LC3N7@users.noreply.github.com"
   },
+  "contributors": [
+    {
+      "name": "qinmenghua",
+      "url": "https://github.com/qinmenghua"
+    }
+  ],
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/qinmenghua/nodebb-plugin-private-forum/issues"
+  "readmeFilename": "README.md",
+  "publishConfig": {
+    "access": "public"
   },
   "nbbpm": {
     "compatibility": "^4.0.0"

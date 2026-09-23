@@ -1,0 +1,51 @@
+# Publish this NodeBB plugin to the public npm registry whenever a GitHub
+# Release is created.
+#
+# Required repository secret:
+#   NPM_TOKEN - an npm "Automation" (or Granular, with publish rights) access
+#               token for the account that owns this package name.
+#               Create at: https://www.npmjs.com/settings/<user>/tokens
+#
+# Release flow:
+#   1. Bump "version" in package.json (e.g. 2.0.3 -> 2.0.4) and commit.
+#   2. Create a GitHub Release whose tag matches that version, e.g. v2.0.4.
+#   3. This workflow verifies tag == package.json version, then runs `npm publish`.
+
+name: Publish to npm
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org/
+
+      # Guard: the release tag must match package.json's version, so we never
+      # publish a build whose tag and version disagree.
+      - name: Verify release tag matches package.json version
+        if: github.event_name == 'release'
+        run: |
+          PKG_VERSION="v$(node -p "require('./package.json').version")"
+          TAG="${{ github.event.release.tag_name }}"
+          echo "package.json: $PKG_VERSION   release tag: $TAG"
+          if [ "$PKG_VERSION" != "$TAG" ]; then
+            echo "::error::Version mismatch - bump package.json to ${TAG#v} before releasing."
+            exit 1
+          fi
+
+      - name: Publish to npm
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

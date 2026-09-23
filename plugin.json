@@ -1,10 +1,10 @@
 {
-  "id": "nodebb-plugin-private-forum",
-  "name": "Private Forum",
+  "id": "nodebb-plugin-private-forum-v2",
+  "name": "Private Forum (v2)",
   "description": "Redirects anonymous visitors to the login page, locking the forum down to registered users.",
   "version": "2.0.3",
   "library": "./library.js",
-  "url": "https://github.com/LM1LC3N7/nodebb-plugin-private-forum",
+  "url": "https://github.com/qinmenghua/nodebb-plugin-private-forum",
   "hooks": [
     {
       "hook": "response:router.page",
