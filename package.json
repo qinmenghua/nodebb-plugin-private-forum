@@ -5,7 +5,7 @@
   "main": "library.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/LM1LC3N7/nodebb-plugin-private-forum"
+    "url": "https://github.com/qinmenghua/nodebb-plugin-private-forum"
   },
   "keywords": [
     "nodebb",
@@ -20,7 +20,7 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/LM1LC3N7/nodebb-plugin-private-forum/issues"
+    "url": "https://github.com/qinmenghua/nodebb-plugin-private-forum/issues"
   },
   "nbbpm": {
     "compatibility": "^4.0.0"

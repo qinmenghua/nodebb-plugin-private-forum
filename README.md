@@ -5,7 +5,8 @@ visitors are redirected to the login page on every content route.
 
 This is a **v4-compatible single-hook rewrite** of the original
 [LM1LC3N7/nodebb-plugin-private-forum](https://github.com/LM1LC3N7/nodebb-plugin-private-forum),
-which only declared `nbbpm.compatibility: ^1.11.0` and was never updated past
+maintained at [qinmenghua/nodebb-plugin-private-forum](https://github.com/qinmenghua/nodebb-plugin-private-forum).
+The original only declared `nbbpm.compatibility: ^1.11.0` and was never updated past
 v1.3.1. The rewrite preserves the original intent while working cleanly on
 NodeBB v4, and fixes two SPA-era bugs (see *Behaviour notes*).
 
