@@ -1,0 +1,28 @@
+{
+  "name": "nodebb-plugin-private-forum",
+  "version": "2.0.3",
+  "description": "Lock down the forum to registered users only. Redirects anonymous visitors to the login page. NodeBB v4 compatible (single-hook rewrite).",
+  "main": "library.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LM1LC3N7/nodebb-plugin-private-forum"
+  },
+  "keywords": [
+    "nodebb",
+    "plugin",
+    "lock",
+    "private",
+    "login"
+  ],
+  "author": {
+    "name": "Louis MILCENT",
+    "email": "14235706+LM1LC3N7@users.noreply.github.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/LM1LC3N7/nodebb-plugin-private-forum/issues"
+  },
+  "nbbpm": {
+    "compatibility": "^4.0.0"
+  }
+}
