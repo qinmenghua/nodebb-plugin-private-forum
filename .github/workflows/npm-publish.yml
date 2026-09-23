@@ -19,11 +19,13 @@
 #       Allowed actions      : must include "npm publish"
 #         Trusted publishers created after 2026-09-03 allow only
 #         "npm stage publish" by default, so tick direct publish explicitly.
-#   Equivalent CLI (npm >= 11.15):
+#   Equivalent CLI (npm >= 11.13 has `npm trust`):
 #     npm trust github nodebb-plugin-private-forum-v2 \
 #       --file npm-publish.yml \
-#       --repo qinmenghua/nodebb-plugin-private-forum \
-#       --allow-publish
+#       --repo qinmenghua/nodebb-plugin-private-forum -y
+#     NOTE: there is no --allow-publish flag; if the CLI-created relationship
+#     ends up stage-only, fix it in the web UI above.
+#     This command needs 2FA and will print a browser URL to authenticate.
 #
 # Release flow:
 #   1. Bump "version" in package.json (e.g. 2.0.3 -> 2.0.4) and commit.
