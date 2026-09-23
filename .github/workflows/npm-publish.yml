@@ -1,31 +1,46 @@
 # Publish this NodeBB plugin to the public npm registry whenever a GitHub
-# Release is created.
+# Release is published.
 #
-# Required repository secret:
-#   NPM_TOKEN - must be a token that can bypass 2FA, otherwise npm rejects the
-#               publish with:
-#                 E403 ... Two-factor authentication or granular access token
-#                 with bypass 2fa enabled is required to publish packages.
-#               Use either:
-#                 * Classic token, type "Automation" (bypasses 2FA), or
-#                 * Granular token with "Read and write" packages access AND
-#                   "Bypass 2FA" enabled.
-#               Create at: https://www.npmjs.com/settings/~/tokens
+# Authentication: npm Trusted Publishing (OIDC) - NO long-lived npm token.
+#   The job exchanges a short-lived GitHub OIDC token for an npm publish
+#   credential scoped to this repo + workflow file. There is no NPM_TOKEN
+#   secret to store, leak or rotate, and every publish carries a signed
+#   provenance attestation.
+#
+# ONE-TIME BOOTSTRAP (npm has no "pending trusted publisher")
+#   npm refuses to configure a trusted publisher for a package that does not
+#   exist yet (npm/cli#8544), so the FIRST version must be published manually.
+#   Afterwards register this workflow on npmjs.com:
+#     Package -> Settings -> Trusted publishing -> GitHub Actions
+#       Organization or user : qinmenghua
+#       Repository           : nodebb-plugin-private-forum   (repo name only)
+#       Workflow filename    : npm-publish.yml                (name only, no path)
+#       Environment name     : (leave EMPTY)
+#       Allowed actions      : must include "npm publish"
+#         Trusted publishers created after 2026-09-03 allow only
+#         "npm stage publish" by default, so tick direct publish explicitly.
+#   Equivalent CLI (npm >= 11.15):
+#     npm trust github nodebb-plugin-private-forum-v2 \
+#       --file npm-publish.yml \
+#       --repo qinmenghua/nodebb-plugin-private-forum \
+#       --allow-publish
 #
 # Release flow:
 #   1. Bump "version" in package.json (e.g. 2.0.3 -> 2.0.4) and commit.
-#   2. Create a GitHub Release whose tag matches that version, e.g. v2.0.4.
-#   3. This workflow verifies tag == package.json version, then runs `npm publish`.
+#   2. Create a GitHub Release whose tag matches, e.g. v2.0.4.
+#   3. This workflow verifies tag == package.json version, then runs
+#      `npm publish` authenticated purely via OIDC.
 
 name: Publish to npm
 
 on:
   release:
-    types: [created]
+    types: [published]
   workflow_dispatch:
 
 permissions:
   contents: read
+  id-token: write # REQUIRED: lets GitHub mint the OIDC token npm exchanges
 
 jobs:
   publish:
@@ -33,10 +48,33 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # NOTE: registry-url is deliberately NOT set here.
+      # actions/setup-node would write an .npmrc containing
+      # `_authToken=${NODE_AUTH_TOKEN}` and inject the literal placeholder
+      # `XXXXX-XXXXX-XXXXX-XXXXX` into NODE_AUTH_TOKEN. npm then treats that as
+      # real token auth, skips the OIDC exchange entirely, and fails with a
+      # confusing E404/ENEEDAUTH. npm already defaults to
+      # registry.npmjs.org, which is where we publish.
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org/
+          package-manager-cache: false
+
+      # Trusted publishing requires npm >= 11.5.1 and Node >= 22.14.0.
+      # The npm bundled with Node 22 on the runners is older, so upgrade it.
+      - name: Upgrade npm
+        run: npm install -g npm@latest && npm --version
+
+      # Cheap guard: fail early with a clear message when GitHub did not grant
+      # an OIDC token, instead of surfacing an opaque publish error later.
+      - name: Check GitHub OIDC availability
+        run: |
+          if [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL}" ]; then
+            echo "GitHub OIDC available to job: yes"
+          else
+            echo "::error::GitHub OIDC not available - 'permissions: id-token: write' is required."
+            exit 1
+          fi
 
       # Guard: the release tag must match package.json's version, so we never
       # publish a build whose tag and version disagree.
@@ -51,7 +89,7 @@ jobs:
             exit 1
           fi
 
-      - name: Publish to npm
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # No NODE_AUTH_TOKEN, no secret: npm detects the GitHub OIDC environment
+      # and exchanges the id-token for a short-lived publish credential.
+      - name: Publish to npm (OIDC trusted publishing)
+        run: npm publish --provenance --access public

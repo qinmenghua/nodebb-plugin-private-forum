@@ -108,17 +108,51 @@ plugin.
 ## Publishing
 
 Publishing to npm is automated via GitHub Actions
-(`.github/workflows/npm-publish.yml`). A release is published whenever a GitHub
-**Release** is created whose tag matches `package.json`'s `version`.
+(`.github/workflows/npm-publish.yml`) using **npm Trusted Publishing (OIDC)** —
+there is **no `NPM_TOKEN` secret** anywhere. The workflow exchanges a
+short-lived GitHub OIDC token for a publish credential scoped to this
+repository + workflow file, and publishes with a signed provenance
+attestation.
 
-One-time setup — add a repository secret:
+A release is published whenever a GitHub **Release** is published whose tag
+matches `package.json`'s `version`.
 
-1. Create an npm **Automation** (or Granular, with publish rights) token at
-   <https://www.npmjs.com/settings/~/tokens>.
-2. In the GitHub repo: **Settings → Secrets and variables → Actions → New
-   repository secret**, name it `NPM_TOKEN`, paste the token.
+### One-time bootstrap (required once, for the very first version)
 
-Release flow:
+npm has **no "pending trusted publisher"** feature: it will not let you
+configure a trusted publisher for a package that does not exist yet
+([npm/cli#8544](https://github.com/npm/cli/issues/8544)). So the first version
+must be published manually, and only then can OIDC take over:
+
+```bash
+# 1. publish v2.0.3 by hand, from your own machine (interactive 2FA)
+cd nodebb-plugin-private-forum
+npm login
+npm publish --access public
+```
+
+```text
+# 2. register this workflow as a trusted publisher on npmjs.com:
+#      https://www.npmjs.com/package/nodebb-plugin-private-forum-v2/access
+#    Trusted publishing -> GitHub Actions
+#      Organization or user : qinmenghua
+#      Repository           : nodebb-plugin-private-forum   (repo name only)
+#      Workflow filename    : npm-publish.yml                (name only, no path)
+#      Environment name     : (leave EMPTY)
+#      Allowed actions      : must include "npm publish"
+#    Trusted publishers created after 2026-09-03 default to stage-only
+#    ("npm stage publish"), so direct publish must be ticked explicitly.
+#
+#    Equivalent CLI (npm >= 11.15):
+#      npm trust github nodebb-plugin-private-forum-v2 \
+#        --file npm-publish.yml \
+#        --repo qinmenghua/nodebb-plugin-private-forum \
+#        --allow-publish
+```
+
+Every release after that publishes itself with no token and no second factor.
+
+### Release flow
 
 ```bash
 # 1. bump the version and commit
@@ -126,11 +160,29 @@ npm version patch          # or edit package.json manually
 git push
 
 # 2. create a GitHub Release with a matching tag, e.g. v2.0.4
-#    (the workflow then runs `npm publish`)
+#    (the workflow then runs `npm publish` via OIDC)
 ```
 
 The workflow verifies the release tag equals `v<package.json version>` and
 aborts otherwise, so a mistyped tag never publishes a mismatched build.
+
+### Requirements and gotchas
+
+- **npm CLI ≥ 11.5.1, Node ≥ 22.14.0.** The workflow upgrades npm explicitly
+  (`npm install -g npm@latest`) because the npm bundled with Node 22 on the
+  runners is older; without it the OIDC exchange silently fails.
+- **`registry-url` must NOT be set on `actions/setup-node`.** If it is,
+  setup-node writes an `.npmrc` with `_authToken=${NODE_AUTH_TOKEN}` plus a
+  placeholder token, npm attempts token auth, skips OIDC, and fails with a
+  misleading `E404`/`ENEEDAUTH`. npm already defaults to
+  `registry.npmjs.org`.
+- **`repository.url` must match the repo that runs the workflow** — vital for a
+  fork like this one, otherwise the OIDC claims and the provenance check
+  disagree.
+- The npm account must have **2FA enabled** (npm policy for publishing). A
+  granular token with *bypass 2FA* is an alternative for manual publishes, but
+  npm is deprecating bypass-2FA tokens for direct publishing — another reason
+  to use OIDC.
 
 ## License
 
