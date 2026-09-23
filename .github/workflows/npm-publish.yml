@@ -2,9 +2,15 @@
 # Release is created.
 #
 # Required repository secret:
-#   NPM_TOKEN - an npm "Automation" (or Granular, with publish rights) access
-#               token for the account that owns this package name.
-#               Create at: https://www.npmjs.com/settings/<user>/tokens
+#   NPM_TOKEN - must be a token that can bypass 2FA, otherwise npm rejects the
+#               publish with:
+#                 E403 ... Two-factor authentication or granular access token
+#                 with bypass 2fa enabled is required to publish packages.
+#               Use either:
+#                 * Classic token, type "Automation" (bypasses 2FA), or
+#                 * Granular token with "Read and write" packages access AND
+#                   "Bypass 2FA" enabled.
+#               Create at: https://www.npmjs.com/settings/~/tokens
 #
 # Release flow:
 #   1. Bump "version" in package.json (e.g. 2.0.3 -> 2.0.4) and commit.
@@ -25,11 +31,11 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
           registry-url: https://registry.npmjs.org/
 
       # Guard: the release tag must match package.json's version, so we never
